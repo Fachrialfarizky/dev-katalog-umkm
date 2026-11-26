@@ -53,3 +53,63 @@ Catat prompt penting selama membangun aplikasi: apa yang kamu minta, hasilnya, d
 ## Debugging dan fitur bonus
 
 Tambahkan bagian baru untuk setiap error yang kamu perbaiki atau fitur bonus yang kamu kerjakan.
+
+---
+
+## US-07 List produk dari database (bonus)
+
+**Prompt:** Baca docs/user-stories.md bagian US-07. Ubah app/admin/page.jsx supaya daftar produk diambil dari tabel "produk" di Supabase di sisi server. Gunakan buatSupabaseSesi() agar sesi login terbaca. Tampilkan produk dalam tabel menggunakan komponen TabelProduk yang sudah ada; tampilkan jumlah produk, pesan error jika gagal, dan teks "Belum ada produk" jika tabel kosong. Hapus CatatanBelumAktif dari halaman ini.
+
+**Hasil:** Berhasil. `app/admin/page.jsx` diubah menjadi async Server Component menggunakan `buatSupabaseSesi()` dan `.select(\"id, nama, harga, foto_url, kategori\")`. Jumlah produk ditampilkan di header. Pesan error dan "Belum ada produk" ditampilkan sesuai kondisi. `TabelProduk` menampilkan foto thumbnail, nama, kategori, harga, dan tombol Ubah/Hapus.
+
+**Perbaikan:** *[TIDAK-ADA]*
+
+---
+
+## US-08 Tambah produk (bonus)
+
+**Prompt:** Baca docs/user-stories.md bagian US-08. Buat fitur tambah produk untuk admin. Buat Server Action tambahProduk di app/admin/actions.js — validasi nama wajib diisi dan harga adalah angka bulat ≥ 0 di sisi server, cek sesi login sebelum insert, simpan ke tabel produk di Supabase, lalu revalidate dan redirect ke /admin. Buat komponen FormProduk di components/ yang dapat dipakai ulang untuk tambah dan ubah (terima prop action). Buat halaman app/admin/produk/baru/page.jsx dan sambungkan ke FormProduk dengan action tambahProduk.
+
+**Hasil:** Berhasil. Ditambahkan Server Action `tambahProduk` di `app/admin/actions.js` dengan validasi server, cek sesi `wajibSesiAdmin()`, insert ke Supabase, `revalidatePath("/")` dan `revalidatePath("/admin")`, lalu `redirect("/admin")`. Dibuat `components/FormProduk.jsx` sebagai `"use client"` dengan `useActionState`, menampilkan error dan mempertahankan nilai input. Dibuat `app/admin/produk/baru/page.jsx` yang sambungkan `tambahProduk` ke `FormProduk`.
+
+**Perbaikan:** **[SENDIRI]** — Muncul error "Gagal menyimpan produk ke database" karena role `authenticated` di Supabase belum punya hak INSERT pada tabel `produk` dan belum ada hak USAGE+SELECT pada sequence ID. Diperbaiki dengan menjalankan di Supabase SQL Editor: `GRANT SELECT, INSERT, UPDATE, DELETE ON public.produk TO authenticated; GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;`
+
+---
+
+## US-09 Ubah produk (bonus)
+
+**Prompt:** Baca docs/user-stories.md bagian US-09. Buat fitur ubah produk untuk admin. Buat Server Action ubahProduk di app/admin/actions.js — ambil id dari hidden input, validasi sama dengan tambahProduk, cek sesi login, update baris di Supabase berdasarkan id, revalidate tiga path (/,/admin,/produk/[id]), lalu redirect ke /admin. Buat halaman app/admin/produk/[id]/ubah/page.jsx — ambil data produk lama dari Supabase, tampilkan notFound() jika tidak ada, sambungkan ubahProduk ke FormProduk dengan defaultValue.
+
+**Hasil:** Berhasil. Ditambahkan Server Action `ubahProduk` di `app/admin/actions.js` dengan validasi id integer, validasi data, cek sesi, `.update().eq("id", id).select("id").maybeSingle()`, dan `revalidatePath` tiga path. Dibuat `app/admin/produk/[id]/ubah/page.jsx` sebagai async Server Component dengan `params` sebagai Promise (`const { id } = await params`), ambil data lama, `notFound()` jika tidak ada, render `FormProduk` dengan `defaultValue` dan `action={ubahProduk}`.
+
+**Perbaikan:** *[TIDAK-ADA]*
+
+---
+
+## Fix foto dan kategori null (US-01 scoring)
+
+**Prompt:** Perbaiki nilai null pada foto_url dan kategori di kartu produk. actions.js harus menyimpan nilai default ("/produk/default.svg" dan "Umum") bukan null. KartuProduk, halaman detail, dan TabelProduk harus menampilkan fallback yang sama. Buat file SVG placeholder di public/produk/default.svg.
+
+**Hasil:** Berhasil. `bacaDanValidasiProduk` di `actions.js` diubah: `kategori: kategori || "Umum"` dan `foto_url: foto_url || "/produk/default.svg"`. `KartuProduk.jsx`, `app/produk/[id]/page.jsx`, dan `TabelProduk.jsx` menampilkan fallback yang sama. Dibuat `public/produk/default.svg` sebagai SVG placeholder dengan ikon gambar abu-abu.
+
+**Perbaikan:** *[TIDAK-ADA]*
+
+---
+
+## Fix logout admin (US-04 / debugging)
+
+**Prompt:** Ada error "An unexpected response was received from the server" saat menekan tombol Keluar di NavAdmin. Perbaiki agar saat keluar admin di local langsung ke menu login kembali.
+
+**Hasil:** Berhasil. Root cause: `<form action={keluarAdmin}>` di Server Component `NavAdmin.jsx` menyebabkan runtime error karena Server Action tidak boleh di-pass langsung di JSX Server Component yang di-render di dalam layout. Solusi: buat `components/TombolKeluar.jsx` sebagai `"use client"` yang menggunakan `useFormStatus` dan `form action={keluarAdmin}`, lalu impor di `NavAdmin.jsx`. Logout sekarang berfungsi dan mengarahkan ke `/admin/login`.
+
+**Perbaikan:** **[SENDIRI]** — Ditemukan juga bahwa `proxy.js` memblok Server Action POST (logout) karena semua request ke `/admin` di-redirect ke `/admin/login` termasuk request `next-action` dari form logout. Diperbaiki dengan menambahkan pengecekan `request.headers.get("next-action")` di `proxy.js` — jika ada header ini, skip redirect agar Server Action bisa berjalan.
+
+---
+
+## US-10 Hapus produk (bonus)
+
+**Prompt:** **[SENDIRI]** — Tombol Hapus di TabelProduk masih dummy. Buat fitur hapus produk: Server Action hapusProduk di actions.js (cek sesi, DELETE dari tabel produk berdasarkan id, revalidatePath). Buat TombolHapus.jsx sebagai "use client" dengan konfirmasi window.confirm sebelum submit, tampil pesan error via alert jika gagal, disabled saat proses. Update TabelProduk untuk pakai TombolHapus.
+
+**Hasil:** Berhasil. Ditambahkan Server Action `hapusProduk` di `app/admin/actions.js` dengan cek sesi `wajibSesiAdmin()`, validasi id integer, `.delete().eq("id", id)`, error handling 42501, `revalidatePath("/")`, `revalidatePath("/admin")`. Dibuat `components/TombolHapus.jsx` sebagai client component dengan `useActionState(hapusProduk, ...)`, konfirmasi `window.confirm`, dan `alert` jika error. `TabelProduk.jsx` diperbarui untuk mengimpor dan menggunakan `TombolHapus`.
+
+**Perbaikan:** *[TIDAK-ADA]*

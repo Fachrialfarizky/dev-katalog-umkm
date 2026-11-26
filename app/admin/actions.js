@@ -59,8 +59,8 @@ function bacaDanValidasiProduk(formData) {
     data: {
       nama,
       harga,
-      kategori: kategori || null,
-      foto_url: foto_url || null,
+      kategori: kategori || "Umum",
+      foto_url: foto_url || "/produk/default.svg",
       deskripsi: deskripsi || null,
     },
     nilai,
@@ -248,6 +248,47 @@ export async function tambahProduk(_prevState, formData) {
     revalidatePath("/");
     revalidatePath("/admin");
     redirect("/admin");
+  }
+}
+
+/**
+ * Menghapus produk dari tabel "produk" di Supabase berdasarkan ID.
+ */
+export async function hapusProduk(_prevState, formData) {
+  const id = String(formData.get("id") ?? "").trim();
+
+  if (!/^\d+$/.test(id)) {
+    return { error: "ID produk tidak valid." };
+  }
+
+  try {
+    const { supabase, error: errorAuth } = await wajibSesiAdmin();
+    if (errorAuth) {
+      return { error: errorAuth };
+    }
+
+    const { error } = await supabase
+      .from("produk")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Gagal menghapus produk:", error);
+      if (error?.code === "42501" || /permission denied/i.test(error?.message ?? "")) {
+        return {
+          error:
+            "Izin database ditolak. Pastikan role authenticated di Supabase sudah diberi hak DELETE pada tabel produk.",
+        };
+      }
+      return { error: "Gagal menghapus produk. Coba beberapa saat lagi." };
+    }
+
+    revalidatePath("/");
+    revalidatePath("/admin");
+    return { error: null, sukses: true };
+  } catch (err) {
+    console.error("Error koneksi saat menghapus produk:", err);
+    return { error: "Terjadi gangguan saat menghubungi database. Coba lagi." };
   }
 }
 
