@@ -16,6 +16,7 @@ async function ambilProduk(id) {
       .maybeSingle();
 
     if (error) {
+      console.error("Gagal mengambil detail produk dari Supabase:", error);
       return {
         produk: null,
         pesanError:
@@ -27,7 +28,8 @@ async function ambilProduk(id) {
       produk: data,
       pesanError: null,
     };
-  } catch {
+  } catch (err) {
+    console.error("Error koneksi Supabase (ambilProduk):", err);
     const belumKonfigurasi =
       !process.env.SUPABASE_URL || !process.env.SUPABASE_SECRET_KEY;
 

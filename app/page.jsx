@@ -14,6 +14,7 @@ async function ambilDaftarProduk() {
       .order("id", { ascending: true });
 
     if (error) {
+      console.error("Gagal mengambil daftar produk dari Supabase:", error);
       return {
         daftarProduk: [],
         pesanError:
@@ -26,6 +27,7 @@ async function ambilDaftarProduk() {
       pesanError: null,
     };
   } catch (err) {
+    console.error("Error koneksi Supabase (ambilDaftarProduk):", err);
     const belumKonfigurasi =
       !process.env.SUPABASE_URL || !process.env.SUPABASE_SECRET_KEY;
 
