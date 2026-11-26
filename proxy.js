@@ -51,7 +51,9 @@ export async function proxy(request) {
     console.error("Gagal memeriksa sesi admin di proxy:", err);
   }
 
-  if (!user && !adalahHalamanLogin) {
+  const adalahServerAction = request.headers.has("next-action");
+
+  if (!user && !adalahHalamanLogin && !adalahServerAction) {
     return NextResponse.redirect(new URL("/admin/login", request.url));
   }
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { keluarAdmin } from "@/app/admin/actions";
+import TombolKeluar from "@/components/TombolKeluar";
 
 export default function NavAdmin() {
   return (
@@ -10,11 +10,7 @@ export default function NavAdmin() {
       <Link href="/admin/password" className="font-semibold hover:text-utama">
         Ganti password
       </Link>
-      <form action={keluarAdmin} className="ml-auto">
-        <button type="submit" className="text-teks-lembut hover:text-bahaya">
-          Keluar
-        </button>
-      </form>
+      <TombolKeluar />
     </nav>
   );
 }
