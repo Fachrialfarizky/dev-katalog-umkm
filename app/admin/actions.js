@@ -70,20 +70,6 @@ export async function gantiPassword(_prevState, formData) {
   const passwordBaru = String(formData.get("password_baru") ?? "");
   const konfirmasi = String(formData.get("konfirmasi_password") ?? "");
 
-  if (passwordBaru.length < 8) {
-    return {
-      error: "Password baru minimal 8 karakter.",
-      sukses: null,
-    };
-  }
-
-  if (passwordBaru !== konfirmasi) {
-    return {
-      error: "Konfirmasi password tidak sama dengan password baru.",
-      sukses: null,
-    };
-  }
-
   try {
     const supabase = await buatSupabaseSesi();
     const {
@@ -95,6 +81,20 @@ export async function gantiPassword(_prevState, formData) {
       return {
         error:
           "Sesi login tidak ditemukan atau sudah berakhir. Silakan masuk kembali.",
+        sukses: null,
+      };
+    }
+
+    if (passwordBaru.length < 8) {
+      return {
+        error: "Password baru minimal 8 karakter.",
+        sukses: null,
+      };
+    }
+
+    if (passwordBaru !== konfirmasi) {
+      return {
+        error: "Konfirmasi password tidak sama dengan password baru.",
         sukses: null,
       };
     }
